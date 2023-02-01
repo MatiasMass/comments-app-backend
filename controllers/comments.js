@@ -1,24 +1,18 @@
 const express = require('express')
-// const app = express()
-// const app = require('../app') // the actual Express application
-const session = require('express-session')
+const cookieParser = require('cookie-parser')
 const commentsRouter = require('express').Router()
 
 const Comment = require('../models/comment')
 
-// app.use(session({
-//   secret: '123',
-//   resave: true,
-//   saveUninitialized: true
-// }))
 
 commentsRouter.get('/', async (request, response) => { // 
-  
-  // request.session.usuario = "matias"
-  // request.session.rol = "admin"
-  // request.session.visit = request.session.visit ? request.session.visit + 1 : 1
-
-  // console.log(request.session.visit)
+  response.cookie('user', 'userX', {
+    maxAge: 1000 * 60 * 60 * 100, // 100 horas 
+    expires: new Date(Date.now() + 1000 * 60 * 60 * 100), // 100 horas
+    httpOnlsetcookiey: true, // no se puede acceder desde el cliente
+    // secure: false, // solo se puede acceder por https, es muy importanto activarlo en produccion
+    // sameSite: 'lax', // solo se puede acceder desde el mismo dominio
+}); // es una variable clave valor
   const notes = await Comment.find({})
   response.json(notes)
 })
@@ -56,13 +50,10 @@ commentsRouter.post('/', async (request, response) => {
 
 
 commentsRouter.put('/:id', (request, response, next) => {
-
-  const ip = request.ip;
-  console.log('ip', ip);
-
   const body = request.body
 
-  const user = request.headers['x-username'] 
+  const user = request.cookies.user
+  // console.log('user', user)
   if (!user){
     throw new Error('User is required')
   }
@@ -80,9 +71,9 @@ commentsRouter.put('/:id', (request, response, next) => {
     if (body.isLiked){
       if (dbComment.liked_by.includes(user)){
         const likedUserIndex = dbComment.liked_by.indexOf(user)
-        console.log('likedUserIndex', likedUserIndex)
+        // console.log('likedUserIndex', likedUserIndex)
         comment.liked_by.splice(likedUserIndex, 1)
-        console.log('liked_by', comment.liked_by)
+        // console.log('liked_by', comment.liked_by)
         comment.likes = comment.liked_by.length
       } else {
         comment.liked_by = dbComment.liked_by.concat(user)
@@ -93,7 +84,7 @@ commentsRouter.put('/:id', (request, response, next) => {
     if (body.isDisliked){
       if (dbComment.disliked_by.includes(user)){
         const dislikedUserIndex = dbComment.disliked_by.indexOf(user)
-        console.log(dislikedUserIndex)
+        // console.log(dislikedUserIndex)
         comment.disliked_by.splice(dislikedUserIndex, 1)
         comment.dislikes = comment.disliked_by.length
       } else {
